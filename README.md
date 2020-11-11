@@ -11,6 +11,7 @@ MWSegEval is an image analysis toolbox that employs methods to automatically seg
 The toolbox requires Matlab R2017a or above and Matlab’s image processing and statistics toolboxes. The software can run on Windows (32 and 64 bit), Mac OS X (64 bit), Linx (64 bit) operating systems. The toolbox includes the export_fig toolbox[1] for exporting figures from Matlab to standard image and document formats.
 
 ![](https://github.com/djkurran/MWSegEval/blob/main/figures/figureReadMe_1.png)
+
 Figure 1. Directory structure of toolbox
 
 ## Installation
