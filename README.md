@@ -10,14 +10,14 @@ MWSegEval is an image analysis toolbox that employs methods to automatically seg
 
 The toolbox requires Matlab R2017a or above and Matlab’s image processing and statistics toolboxes. The software can run on Windows (32 and 64 bit), Mac OS X (64 bit), Linx (64 bit) operating systems. The toolbox includes the export_fig toolbox[1] for exporting figures from Matlab to standard image and document formats.
 
-![](https://github.com/djkurran/MWSegEval/tree/main/figures/figureReadMe_1.png)
+![](https://github.com/djkurran/MWSegEval/blob/main/figures/figureReadMe_1.png)
 Figure 1. Directory structure of toolbox
 
 ## Installation
 
 Installation of the MWSegEval toolbox is achieved by unpacking the MWSegEval libraries at the user’s choice of directory. The libraries can be obtained as a *.zip* archive or by cloning the tool repository (http://www.github.com/djkurran/MWSegEval). The toolbox expects the MWSegEval libraries to be present in the directory structure shown in figure 1. A test data set is also provided in the *testData* folder and is comprised of models represented with square mesh elements and triangular mesh elements that are stored in the *SquareMesh_ScatteredDensityBreast* and *TriangularMesh_HeterogenouslyDenseBreast* folders, respectively.
 
-![](https://github.com/djkurran/MWSegEval/tree/main/figures/figureReadMe_2.png)
+![](https://github.com/djkurran/MWSegEval/blob/main/figures/figure2.png)
 Figure 2. GUI allows user to set parameters for tasks implemented with functions and classes contained in MWSegEval libraries.
 
 ## How to use MWSegEval toolbox
