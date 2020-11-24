@@ -27,7 +27,7 @@ The graphical user interface (GUI) shown in figure 2 may be started by right cli
 
 ## On-line manual and videos
 
-A comprehensive [on-line manual](https://github.com/djkurran/MWSegEval/wiki) providing a detailed description of how to input images and apply the toolbox methods to the images is hosted by the [repository wiki page](https://github.com/djkurran/MWSegEval/wiki). The on-line manual is supplemented with a series of videos of examples on the complete workflow to process a number of medical microwave breast images. 
+A comprehensive [on-line manual](https://github.com/djkurran/MWSegEval/wiki) providing a detailed description of how to input images and apply the toolbox methods to the images is hosted on the [repository wiki page](https://github.com/djkurran/MWSegEval/wiki). The on-line manual is supplemented with a series of videos that demonstrate examples of the complete workflow to process medical microwave breast images. 
 
 ## Licensing
 
