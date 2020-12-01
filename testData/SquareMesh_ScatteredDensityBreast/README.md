@@ -1,7 +1,7 @@
 # Data and configuration files for *Scattered Density* breast 
 
 ***
-These are the data and configuration files related to a *Scattered Density* breast. The files are used to provide an example of microwave inversion results produced from various microwave breast imaging algorithms for which the forward and inverse models use or have already been transformed by the user to rectangular (or square) mesh elements. The models are input to the MWSegEval toolbox by selecting the 'Rectangular mesh (Matlab)' option. Refer to [A. Rectangular mesh elements (Matlab)](https://github.com/djkurran/MWSegEval/wiki/2.1-Workflow-input-models) for a detailed description on how to input the forward and inverse models into the MWSegEval toolbox.
+These are the data and configuration files related to a *Scattered Density* breast. The files are used to provide an example of microwave inversion results produced from various microwave breast imaging algorithms for which the forward and inverse models use or have already been transformed by the user to rectangular (or square) mesh elements. The models are input to the MWSegEval toolbox by selecting the *Rectangular mesh (Matlab)* option. Refer to [A. Rectangular mesh elements (Matlab)](https://github.com/djkurran/MWSegEval/wiki/2.1-Workflow-input-models) for a detailed description on how to input the forward and inverse models into the MWSegEval toolbox.
 
 
 ## Configuration folder
