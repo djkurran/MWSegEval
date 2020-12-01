@@ -2,7 +2,7 @@
 
 ***
 
-These are the data and configuration files related to a heterogenously dense breast. The files are used to provide an example of microwave inversion results produced from the finite element method contrast source (FEM-CS) inversion technique. The forward and inverse models are represented with various sized triangular mesh elements. The models are input to the MWSegEval toolbox by selecting the 'Triangular mesh' option. The procedure for inputing the forward and inverse model is described in [B. Triangular mesh elements](https://github.com/djkurran/MWSegEval/wiki/2.1-Workflow-input-models).
+These are the data and configuration files related to an *Heterogenously dense* breast. The files are used to provide an example of microwave inversion results produced from the finite element method contrast source (FEM-CS) inversion technique. The forward and inverse models are represented with various sized triangular mesh elements. The models are input to the MWSegEval toolbox by selecting the *Triangular mesh* option. The procedure for inputing the forward and inverse model is described in [Input forward and inverse models with triangular mesh elements](https://github.com/djkurran/MWSegEval/wiki/2.1-Workflow-input-models).
 
 
 ## Configuration folder
@@ -19,7 +19,7 @@ Apache License, 2.0
 
 ## Citing MWSegEval
 
-D. Kurrant, N. Abdollahi, M. Omer, P. Mojabi, E. Fear, J. LoVetri, 'MWSegEval - An image analysis toolbox for microwave breast images'ù, *SoftwareX*, 2020 (submitted for review)
+D. Kurrant, N. Abdollahi, M. Omer, P. Mojabi, E. Fear, J. LoVetri, "MWSegEval - An image analysis toolbox for microwave breast images", *SoftwareX*, 2020 (submitted for review)
 
 ## Citing electromagnetic model
 
