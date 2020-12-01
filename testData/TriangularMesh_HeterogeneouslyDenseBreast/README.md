@@ -11,7 +11,7 @@ Mesh information and the value of the complex contrast at nodes of the model are
 
 ## data folder
 
-Ccontrast permittivity at nodes on the reconstructed model mesh at specific iterations of the inversion algorithm is provided in contrast files in the *data* folder in the *data* folder. The user must load iteration number furnished by the files by pressing the 'Press to get contrast iteration file list' button. Once the list of available contrast iterations is displayed, the user selects the desired contrast iteration from the list.
+Ccontrast permittivity at nodes on the reconstructed model mesh at specific iterations of the inversion algorithm is provided in contrast files in the *data* folder in the *data* folder. The user must load the iteration number that identifies the contrast file by pressing the *Press to get contrast iteration file list* button. Once the list of available contrast iterations is displayed, the user selects the desired contrast iteration from the list.
 
 ## Licensing
 
