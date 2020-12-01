@@ -1,0 +1,26 @@
+<FEMPROJECT run="csi">
+    
+	<DATADOMAIN sourcetype="1" path="E:\Data\TriangularMesh_HeterogenouslyDenseBreast\Configuration/" freqfilename="frequency.txt"
+         obsType="interpolation" rxArrangement="0">
+    </DATADOMAIN>
+        
+    <EXTERNALPHYSICS epsr_real="24.84" epsr_imag="-18.71"></EXTERNALPHYSICS>
+    
+    <MESH filename="InvMesh.msh"></MESH>
+    
+    <BOUNDARY surfacetype="abc" order="2" contour="Circular" radius="0.1"></BOUNDARY>
+    
+    <PHYSICS materialsFilename="PriorMaterials.txt" materialsFileType="9"></PHYSICS>
+    
+	
+	 <CSICONFIG>
+        <INHOMOGENEOUSBKG enable="1" mesh= "InvMesh.msh" materialsFilename = "PriorMaterials.txt" materialsFileType="9"></INHOMOGENEOUSBKG>
+        <IMAGINGDOMAIN ImgDomainType="Physics-Img" physNum="3001;3002;3003"></IMAGINGDOMAIN>
+        <PARAMETERS multFreq="0">
+            <ITERATIONS iter_count="250"></ITERATIONS>
+            <CONSTRAINTS applyConstraint="1" max_eps_r="100" min_eps_r="1" max_eps_i="40" min_eps_i="0"></CONSTRAINTS>
+        </PARAMETERS>        
+        <NOISE addNoise="1" noiseType="Uniform" noisePercent="3"></NOISE>
+	</CSICONFIG>
+    
+</FEMPROJECT>

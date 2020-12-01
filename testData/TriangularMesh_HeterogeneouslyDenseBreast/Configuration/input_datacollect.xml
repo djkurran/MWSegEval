@@ -1,0 +1,15 @@
+<FEMPROJECT run="datacollect">
+    
+	<DATADOMAIN sourcetype="1" path="E:\Data\TriangularMesh_HeterogenouslyDenseBreast\Configuration/" freqfilename="frequency.txt"
+        txfilename="TxPositions.txt" rxfilename="RxPositions.txt" obsType="interpolation" rxArrangement="0">
+    </DATADOMAIN>
+        
+    <EXTERNALPHYSICS epsr_real="24.84"  epsr_imag="-18.71"></EXTERNALPHYSICS>
+    
+    <MESH filename="FwdMesh.msh"></MESH>
+    
+    <BOUNDARY surfacetype="abc" order="2" contour="Circular" radius="0.1"></BOUNDARY>
+    
+    <PHYSICS materialsFilename="FwdMaterials.txt" materialsFileType="9"></PHYSICS>
+    
+</FEMPROJECT>
