@@ -762,9 +762,40 @@ classdef segmentation
             % dense tissue (adipose). 
             ROI = (obj.ROIMask.*obj.component) + obj.notROI;            
             [m, n] = size(ROI);
+            % Schedule number of replicates that kmeans uses based on the
+            % number of clusters to partitions the images. The schedule was
+            % formulated based on an analysis of variation of the cost
+            % function values as the number of clusters increases. The
+            % analysis was carried out on various numerical breast models
+            % with a variety of tissue distrubtions and densities. The
+            % replicate parameter specifies the number of times to repeat 
+            % clustering using new initial cluster centroud positions. The
+            % algorithm initializes the replications separately using k-means++.
+            if obj.nmCl < 6
+                repl = 10;
+            elseif (obj.nmCl > 5 & obj.nmCl < 8)
+                repl = 30;
+            elseif (obj.nmCl > 7 & obj.nmCl < 9)
+                repl = 50;
+            else
+                repl = 100;
+            end            
+            % If the cluster losses all of its member observations, a new
+            % cluster of the one point furthest from its centroid is
+            % chosen (i.e., 'EmptyAction' -> 'singleton'). Kmeans uses the
+            % squared Euclidean (i.e., L2 norm) distance for minimizatoin.
+            % That is, each centroid is the mean of the points of that
+            % cluster. The kmeans performs an online update phase in addition
+            % to a batch update phase. Although the online phase can be
+            % time-consuming, it guarentees a solution that is a local
+            % minimum of the distance criterion. That is, the algorithm
+            % finds a partition of the data in which moving any single
+            % point to a different cluster increases the total sum of
+            % distances. 
+                        
             % Apply the k-means clustering algorithm to the region of
             % interest.
-            [idx,C]  = kmeans(ROI(:), obj.nmCl, 'EmptyAction', 'singleton','Replicates',100,'OnlinePhase','on');
+            [idx,C]  = kmeans(ROI(:), obj.nmCl, 'EmptyAction', 'singleton','Distance','sqeuclidean','Replicates',repl,'OnlinePhase','on');
             obj.ROIPart = reshape(idx,[m n]);
             obj.ROIClst = obj.ROIPart;
             D = sort(C);
@@ -775,7 +806,7 @@ classdef segmentation
             obj.ROIclusters{obj.nmCl}.centroids = D;
             obj.ROIclusters{obj.nmCl}.labels =  unique(idx);
             obj.ROIclusters{obj.nmCl}.clusterMap = obj.ROIClst;
-        end % partitionROI        
+        end % function partitionROI           
         %-----------------------------------------------------------------
         function imageClusters( obj, xNodes, yNodes)
             % Helper function used when troubleshooting to image the clusters
@@ -787,15 +818,23 @@ classdef segmentation
             imagesc(imrotate(obj.ROIClst,90),'XData',xNodes,'YData',-yNodes);
             ylabel('y (m)','FontSize',14);
             xlabel('x (m)','FontSize',14);
-            xlim([xNodes(1) xNodes(end)])
-            ylim([yNodes(1) yNodes(end)]) 
-            %axis('equal');
+            xlim([xNodes(1) xNodes(end)]);
+            ylim([yNodes(1) yNodes(end)]);             
             grid on;
             set(gca,'YDir','normal');
-            set(gca,'fontsize',14);    
-            colormap(gray)            
-            colorbar
-        end % function imageClusters        
+            set(gca,'fontsize',14);
+            cmap = jet(obj.nmCl);
+            t = 1:1:obj.nmCl;
+            t1 = [];
+            for i = 1:obj.nmCl                
+                t1{i} = num2str(t(i));
+            end
+            cmap(1,:) = [1 1 1];
+            cmap(2,:) = [0 0 1];
+            cmap(length(cmap),:) = [0 0 0];
+            colormap(cmap);            
+            colorbar('Ticks', t,'TickLabels', t1);   
+        end % function imageClusters          
         %------------------------------------------------------------------
         function obj = getTumorMask(obj)
             % This function gets the region within the ROI segmented as malignant
@@ -1847,69 +1886,70 @@ classdef segmentation
             %--------------------------------------------------------------
             figure;
             set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.90, 0.90]);
+            annotation('rectangle',[0.05,0.935,0.93,0.060],'Edgecolor','k');
+            annotation('rectangle',[0.002,0.05,0.03,0.90],'Edgecolor','k');    
             
             % Display fat masks
             subplot(3,4,1);imagesc(imrotate(refModel.masks.fat,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
-            set(gca, 'xticklabel','');            
-            ylabel('fat masks (m)');            
+            set(gca, 'xticklabel','');
+            title({'Forward Model';'Real'},'Units', 'normalized','Position',[0.5,1.00,0] );
+            ylabel('fat masks (m)','Units', 'normalized','Position',[-0.22,0.50,0]);            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.6 0.97 1.40 1.40]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.55 0.92 1.30 1.30]) % stretch its width and height                        
             drawnow            
                         
             subplot(3,4,2);imagesc(imrotate(obj.masks.fatRe,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');set(gca, 'yticklabel','');
+            title('Real', 'Units', 'normalized','Position',[0.5,1.00,0] )
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.89 0.97 1.40 1.40]) % stretch its width and height 
+            set(gca,'position',sub_pos.*[0.88 0.92 1.30 1.30]) % stretch its width and height 
             drawnow
             
             subplot(3,4,3);imagesc(imrotate(obj.masks.fatIm,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');           
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');set(gca, 'yticklabel','');
+            title({'Inverse Model';'Imaginary'}, 'Units', 'normalized','Position',[0.5,1.00,0] )
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.96 0.97 1.40 1.40]) % stretch its width and height
+            set(gca,'position',sub_pos.*[0.96 0.92 1.30 1.30]) % stretch its width and height
             drawnow
             
             subplot(3,4,4);imagesc(imrotate(obj.masks.fatMag,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');set(gca, 'yticklabel','');
+            title('Magnitude', 'Units', 'normalized','Position',[0.5,1.00,0] )
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.99 0.97 1.40 1.40]) % stretch its width and height
+            set(gca,'position',sub_pos.*[1.0 0.92 1.30 1.30]) % stretch its width and height
             drawnow
             
             % Display glandular masks
             subplot(3,4,5);imagesc(imrotate(refModel.masks.glandular,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');           
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');            
-            ylabel('glandular masks (m)');            
+            ylabel('glandular masks (m)','Units', 'normalized','Position',[-0.22,0.50,0]);             
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.60 0.935 1.40 1.40]) % stretch its width and height                         
+            set(gca,'position',sub_pos.*[0.55 0.900 1.30 1.30]) % stretch its width and height                         
             drawnow            
                         
             subplot(3,4,6);imagesc(imrotate(obj.masks.glandularRe,90),'XData',xNodes,'YData',-yNodes);
@@ -1921,101 +1961,94 @@ classdef segmentation
             set(gca, 'xticklabel','');set(gca, 'yticklabel','');
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.89 0.935 1.40 1.40]) % stretch its width and height 
+            set(gca,'position',sub_pos.*[0.88 0.900 1.30 1.30]) % stretch its width and height 
             drawnow
             
             subplot(3,4,7);imagesc(imrotate(obj.masks.glandularIm,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');set(gca, 'yticklabel','');
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.96 0.935  1.40 1.40]) % stretch its width and height
+            set(gca,'position',sub_pos.*[0.96 0.900  1.30 1.30]) % stretch its width and height
             drawnow
             
             subplot(3,4,8);imagesc(imrotate(obj.masks.glandularMag,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');set(gca, 'yticklabel','');
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.99 0.935 1.40 1.40]) % stretch its width and height
+            set(gca,'position',sub_pos.*[1.00 0.900 1.30 1.30]) % stretch its width and height
             drawnow
             
             % Display tumor masks
             subplot(3,4,9);imagesc(imrotate(refModel.masks.tumor,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
-            set(gca,'fontsize',14);
-            %set(gca, 'xticklabel','');            
-            ylabel('tumor masks (m)');
-            xlabel('fwd model (m)');
+            set(gca,'fontsize',14);                      
+            ylabel('Tumor masks (m)','Units', 'normalized','Position',[-0.22,0.50,0]); 
+            xlabel('(m)');
             xlabh = get(gca,'xLabel');
             xtickangle(90)
             set(xlabh,'Position',get(xlabh,'Position') + [0 .01 0]);
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position            
-            set(gca,'position',sub_pos.*[0.60 0.72 1.40 1.40]) % stretch its width and height
+            set(gca,'position',sub_pos.*[0.55 0.72 1.30 1.30]) % stretch its width and height
             drawnow            
                         
             subplot(3,4,10);imagesc(imrotate(obj.masks.tumorRe,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
-            xlabel('real reconst. (m)');
+            xlabel('(m)');
             xlabh = get(gca,'xLabel');
             set(xlabh,'Position',get(xlabh,'Position') + [0 .01 0]);
             set(gca, 'yticklabel','');
             xtickangle(90)
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.89 0.72 1.40 1.40]) % stretch its width and height
+            set(gca,'position',sub_pos.*[0.88 0.72 1.30 1.30]) % stretch its width and height
             drawnow
             
             subplot(3,4,11);imagesc(imrotate(obj.masks.tumorIm,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
-            xlabel('im reconst. (m)');
+            xlabel('(m)');
             xlabh = get(gca,'xLabel');
             set(xlabh,'Position',get(xlabh,'Position') + [0 .01 0]);
             set(gca, 'yticklabel','');
             xtickangle(90);
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.96 0.72  1.40 1.40]) % stretch its width and height
+            set(gca,'position',sub_pos.*[0.96 0.72  1.30 1.30]) % stretch its width and height
             drawnow
             
             subplot(3,4,12);imagesc(imrotate(obj.masks.tumorMag,90),'XData',xNodes,'YData',-yNodes);
-            set(gca,'YDir','normal');
-            %title([recType ' real fat'], 'FontSize',10);
+            set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position
             colormap(gca,'parula')            
             set(gca,'fontsize',14);
-            xlabel('mag reconst.(m)');
+            xlabel('(m)');
             xlabh = get(gca,'xLabel');
             set(xlabh,'Position',get(xlabh,'Position') + [0 .01 0]);
             set(gca, 'yticklabel','');
             xtickangle(90);            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.99 0.72 1.40 1.40]) % stretch its width and height
+            set(gca,'position',sub_pos.*[1.00 0.72 1.30 1.30]) % stretch its width and height
             drawnow
             
             obj.saveFigure('tissueMasks_all', dataPath, figFormat);
-        end % function imageMasks        
+        end % function imageMasks      
         %------------------------------------------------------------------
         function imageThreshTissueMaps( obj, refModel, fe, gui)
             % This function displays the tissue maps when tissue types have been
@@ -2031,77 +2064,69 @@ classdef segmentation
             %--------------------------------------------------------------
             figure;
             set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.95, 0.80]);
+            annotation('rectangle',[0.05,0.920,0.93,0.080],'Edgecolor','k');
+            annotation('rectangle',[0.002,0.05,0.03,0.90],'Edgecolor','k');  
             
             % Display permittivity maps
             % Forward model - 1, Re(epr) - 2, Im(epr) - 3, Mag(epr) - 4
             subplot(2,4,1);imagesc(imrotate(real(fe.fwdMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes);
             colormap(gca, gui.figColorMap);
-            ch = colorbar;    
-%           set(gca, 'CLim');            
+            ch = colorbar;               
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
-            set(gca, 'xticklabel',''); 
-            ylabel('(m)');
-            ylabh = get(gca,'yLabel');
-            set(ylabh,'Position',get(ylabh,'Position') + [0.027 0 0]); 
+            set(gca, 'xticklabel','');             
+            ylabel('Permittivity (m)','Units', 'normalized','Position',[-0.27,0.50,0]);
+            title({'Forward Model';'Real'},'Units', 'normalized','Position',[0.5,1.00,0] );
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.30 0.95 1.20 1.20]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.55 0.93 1.10 1.10]) % stretch its width and height                        
             drawnow     
             
             subplot(2,4,2);imagesc(imrotate(real(fe.invMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes);
             colormap(gca, gui.figColorMap);
             ch = colorbar;    
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');
             set(gca, 'yticklabel','');
-            %ylabel('\epsilon maps (m)');
-            %ylabh = get(gca,'yLabel');
-            %set(ylabh,'Position',get(ylabh,'Position') + [0 .00 0.1]);
-            %set(ylabh,'Position',get(ylabh,'Position'));
+            title('Real','Units', 'normalized','Position',[0.5,1.00,0] );            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.83 0.95 1.20 1.20]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[0.89 0.93 1.10 1.10]) % stretch its width and height                     
             drawnow
             
             subplot(2,4,3);imagesc(imrotate(-imag(fe.invMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes);
             colormap(gca, gui.figColorMap);
             ch = colorbar;    
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
+            title({'Inverse model';'Imaginary'},'Units', 'normalized','Position',[0.5,1.00,0] ); 
             set(gca, 'xticklabel','');
-            set(gca, 'yticklabel','');
-            %ylabel('\epsilon maps (m)');
-            %ylabh = get(gca,'yLabel');
-            %set(ylabh,'Position',get(ylabh,'Position') + [0 .00 0.1]);
-            %set(ylabh,'Position',get(ylabh,'Position'));
+            set(gca, 'yticklabel','');            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.96 0.95 1.20 1.20]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[0.965 0.93 1.10 1.10]) % stretch its width and height                     
             drawnow
             
             subplot(2,4,4);imagesc(imrotate(abs(fe.invMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes);
             colormap(gca, gui.figColorMap); 
             ch = colorbar;
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
-            p=get(gca,'position'); % save position            
+            p=get(gca,'position'); % save position  
+            title('Magnitude','Units', 'normalized','Position',[0.5,1.00,0] );            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');
             set(gca, 'yticklabel','');            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[1.02 0.95 1.20 1.20]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[1.00 0.93 1.10 1.10]) % stretch its width and height                     
             drawnow
             
             % Display the tissue type images
@@ -2112,17 +2137,15 @@ classdef segmentation
             imagesc(imrotate(classifiedTissues,90),'XData',fe.xNodes,'YData',-fe.yNodes);                     
             cmap = obj.getTissueColorMap();            
             colormap(gca,cmap);            
-            set(gca,'fontsize',14);
-            ylabel('(m)');
-            ylabh = get(gca,'yLabel');
-            set(ylabh,'Position',get(ylabh,'Position') + [0.017 0 0]); 
-            xlabel('fwd model (m)');
+            set(gca,'fontsize',14);            
+            ylabel('Tissue Type (m)','Units', 'normalized','Position',[-0.27,0.50,0]);
+            xlabel('(m)');
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.30 1.05 1.20 1.20]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.55 1.05 1.11 1.11]) % stretch its width and height                        
             drawnow
             
             subplot(2,4,6);            
@@ -2131,13 +2154,13 @@ classdef segmentation
             colormap(gca,cmap);            
             set(gca,'fontsize',14);
             set(gca, 'yticklabel','');
-            xlabel('Re(\epsilon(r)) (m)');
+            xlabel('(m)');
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.83 1.05 1.20 1.20]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.885 1.05 1.11 1.11]) % stretch its width and height                        
             drawnow     
             
             subplot(2,4,7);            
@@ -2146,13 +2169,13 @@ classdef segmentation
             colormap(gca,cmap);            
             set(gca,'fontsize',14);
             set(gca, 'yticklabel','');
-            xlabel('Im(\epsilon(r)) (m)');
+            xlabel('(m)');
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.96 1.05 1.20 1.20]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.965 1.05 1.11 1.11]) % stretch its width and height                        
             drawnow 
             
             subplot(2,4,8);            
@@ -2161,16 +2184,16 @@ classdef segmentation
             colormap(gca,cmap);
             cbh = colorbar;
             cbh.Ticks = [1, 2, 3, 4, 5];            
-            cbh.TickLabels = {'bckgnd','fatty','transt.','fibrogld','malig.'};           
+            cbh.TickLabels = {'backgrnd','fatty','transtion','fibrogld','malignant'};           
             set(gca,'fontsize',14);
             set(gca, 'yticklabel','');
-            xlabel('Mag(\epsilon(r)) (m)');
+            xlabel('(m)');
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[1.00 1.05 1.70 1.20]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[1.00 1.05 1.60 1.10]) % stretch its width and height                        
             cbh.Position = cbh.Position - [0.01 0 0 0];
             drawnow
             
@@ -2195,69 +2218,70 @@ classdef segmentation
             %--------------------------------------------------------------        
             figure;
             set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.95, 0.95]);
+            annotation('rectangle',[0.05,0.935,0.93,0.065],'Edgecolor','k');
+            annotation('rectangle',[0.002,0.05,0.03,0.90],'Edgecolor','k');
+            annotation('textarrow', [0.013 0.013], [0.3 0.3], 'String', 'Cluster map (m)','HeadStyle' ,'none','LineStyle' ,'none', 'FontName','Helvetica' ,'FontSize', 14,'TextRotation',90);
             
             % Display permittivity maps
             % Forward model - 1, Re(epr) - 2, Im(epr) - 3, Mag(epr) - 4
             subplot(3,4,1);imagesc(imrotate(real(fe.fwdMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes);
             colormap(gca, gui.figColorMap);
-            ch = colorbar;    
-%           set(gca, 'CLim');            
+            ch = colorbar;             
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
-            set(gca, 'xticklabel',''); 
-            ylabel('\epsilon(r) maps (m)');
-            ylabh = get(gca,'yLabel');
-            set(ylabh,'Position',get(ylabh,'Position') + [0.027 0 0]); 
+            set(gca, 'xticklabel','');                  
+            ylabel('Permittivity map (m)','Units', 'normalized','Position',[-0.27,0.50,0]);
+            title({'Forward Model';'Real'},'Units', 'normalized','Position',[0.5,1.02,0] );
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.30 1.01 1.15 1.30]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.55 0.92 1.15 1.30]) % stretch its width and height                        
             drawnow     
             
             subplot(3,4,2);imagesc(imrotate(real(fe.invMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes);
             colormap(gca, gui.figColorMap);
             ch = colorbar;    
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');
-            set(gca, 'yticklabel','');            
+            set(gca, 'yticklabel','');
+            title('Real','Units', 'normalized','Position',[0.5,1.02,0] );
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.83 1.01 1.15 1.30]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[0.92 0.92 1.15 1.30]) % stretch its width and height                     
             drawnow
             
             subplot(3,4,3);imagesc(imrotate(-imag(fe.invMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes);
             colormap(gca, gui.figColorMap);
             ch = colorbar;    
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
+            title({'Inverse model';'Imaginary'},'Units', 'normalized','Position',[0.5,1.02,0] );
             set(gca, 'xticklabel','');
             set(gca, 'yticklabel','');            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.96 1.01 1.15 1.30]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[1.00 0.92 1.15 1.30]) % stretch its width and height                     
             drawnow
             
             subplot(3,4,4);imagesc(imrotate(abs(fe.invMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes);
             colormap(gca, gui.figColorMap); 
             ch = colorbar;
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
+            title('Magnitude','Units', 'normalized','Position',[0.5,1.02,0] );
             set(gca, 'xticklabel','');
             set(gca, 'yticklabel','');            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[1.02 1.01 1.15 1.30]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[1.03 0.92 1.15 1.30]) % stretch its width and height                     
             drawnow
             
             % Display the tissue type images
@@ -2266,59 +2290,45 @@ classdef segmentation
             classifiedTissues = refModel.tissueTypes.background + refModel.tissueTypes.fat + refModel.tissueTypes.transition + refModel.tissueTypes.fibroglandular + refModel.tissueTypes.tumor;
             imagesc(imrotate(classifiedTissues,90),'XData',fe.xNodes,'YData',-fe.yNodes);                     
             cmap = obj.getTissueColorMap();            
-            colormap(gca,cmap);
-            %cbh = colorbar;
-            %cbh.Ticks = [1, 2, 3, 4, 5];            
-            %cbh.TickLabels = {'backgnd','fatty','transition','fibrogland.','malig.'};
+            colormap(gca,cmap);            
             set(gca,'fontsize',14);
-            ylabel('tissue types (m)');
-            ylabh = get(gca,'yLabel');
-            set(ylabh,'Position',get(ylabh,'Position') + [0.017 0 0]); 
-            xlabel('forward model (m)');
+            ylabel('Tissue type map (m)','Units', 'normalized','Position',[-0.27,0.50,0]);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.30 0.99 1.20 1.30]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.55 0.88 1.15 1.30]) % stretch its width and height                        
             drawnow
             
             subplot(3,4,6);            
             classifiedTissues = obj.tissueTypes.background + obj.tissueTypes.fatRe + obj.tissueTypes.transitionRe + obj.tissueTypes.fibroglandularRe + obj.tissueTypes.tumorRe;
             imagesc(imrotate(classifiedTissues,90),'XData',fe.xNodes,'YData',-fe.yNodes);                     
-            colormap(gca,cmap);
-            %cbh = colorbar;
-            %cbh.Ticks = [1, 2, 3, 4, 5];            
-            %cbh.TickLabels = {'backgnd','fatty','transition','fibrogland.','malig.'};
+            colormap(gca,cmap);            
             set(gca,'fontsize',14);
             set(gca, 'yticklabel','');
-            set(gca, 'xticklabel','');            
-            %xlabel('Re(\epsilon(r)) (m)');
+            set(gca, 'xticklabel','');                        
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.83 0.99 1.20 1.30]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.92 0.88 1.15 1.30]) % stretch its width and height                        
             drawnow     
             
             subplot(3,4,7);            
             classifiedTissues = obj.tissueTypes.background + obj.tissueTypes.fatIm + obj.tissueTypes.transitionIm + obj.tissueTypes.fibroglandularIm + obj.tissueTypes.tumorIm;
             imagesc(imrotate(classifiedTissues,90),'XData',fe.xNodes,'YData',-fe.yNodes);                     
-            colormap(gca,cmap);
-            %cbh = colorbar;
-            %cbh.Ticks = [1, 2, 3, 4, 5];            
-            %cbh.TickLabels = {'backgnd','fatty','transition','fibrogland.','malig.'};
+            colormap(gca,cmap);            
             set(gca,'fontsize',14);
             set(gca, 'yticklabel','');
-            set(gca, 'xticklabel',''); 
-            %xlabel('Im(\epsilon(r)) (m)');
+            set(gca, 'xticklabel','');             
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.96 0.99 1.20 1.30]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[1.00 0.88 1.15 1.30]) % stretch its width and height                        
             drawnow 
             
             subplot(3,4,8);            
@@ -2336,7 +2346,7 @@ classdef segmentation
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[1.00 0.99 1.20 1.30]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[1.03 0.88 1.15 1.30]) % stretch its width and height                        
             cbh.Position = cbh.Position - [0.01 0 0 0];
             drawnow
             
@@ -2349,22 +2359,28 @@ classdef segmentation
             ylim([fe.yNodes(1) fe.yNodes(end)]) 
             %axis('equal');            
             set(gca,'YDir','normal');
-            set(gca,'fontsize',14); 
-            colormap(gca,gray);            
+            set(gca,'fontsize',14);            
+            nmCl = max(max(obj.clusters.Re));
+            cmap = jet(nmCl);
+            t = 1:1:nmCl;
+            t1 = [];
+            for i = 1:nmCl                
+                t1{i} = num2str(t(i));
+            end
+            cmap(1,:) = [1 1 1];
+            cmap(2,:) = [0 0 1];
+            cmap(length(cmap),:) = [0 0 0];
+            colormap(gca, cmap);            
+            colorbar('Ticks', t,'TickLabels', t1);
             cbh = colorbar;            
-            ylabel('clusters (m)');
-            ylabh = get(gca,'yLabel');
-            set(ylabh,'Position',get(ylabh,'Position') + [0.025 0 0]); 
-            xlabel('Re(\epsilon(r)) (m)');
-            xlabh = get(gca,'xLabel');
-            set(xlabh,'Position',get(xlabh,'Position') + [0 0.005 0]); 
+            xlabel('(m)','Units', 'normalized','Position',[0.50,-0.09,0]);            
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
-            cbh.Position = cbh.Position - [0.000 0 0 0];
+            cbh.Position = cbh.Position - [0.00000 0 0 0];
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.83 0.75 1.71 1.30]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.92 0.51 1.65 1.30]) % stretch its width and height                        
             drawnow
             
             subplot(3,4,11);            
@@ -2373,20 +2389,29 @@ classdef segmentation
             ylim([fe.yNodes(1) fe.yNodes(end)]) 
             %axis('equal');            
             set(gca,'YDir','normal');
-            set(gca,'fontsize',14); 
-            colormap(gca,gray);            
+            set(gca,'fontsize',14);
+            nmCl = max(max(obj.clusters.Im));
+            cmap = jet(nmCl);
+            t = 1:1:nmCl;
+            t1 = [];
+            for i = 1:nmCl                
+                t1{i} = num2str(t(i));
+            end
+            cmap(1,:) = [1 1 1];
+            cmap(2,:) = [0 0 1];
+            cmap(length(cmap),:) = [0 0 0];
+            colormap(gca,cmap);            
+            colorbar('Ticks', t,'TickLabels', t1);
             cbh = colorbar;
             set(gca, 'yticklabel','');
-            xlabel('Im(\epsilon(r)) (m)');
-            xlabh = get(gca,'xLabel');
-            set(xlabh,'Position',get(xlabh,'Position') + [0 0.005 0]);
+            xlabel('(m)','Units', 'normalized','Position',[0.50,-0.09,0]); 
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
             cbh.Position = cbh.Position - [0.000 0 0 0];
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.96 0.75 1.71 1.30]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[1.00 0.51 1.65 1.30]) % stretch its width and height                        
             drawnow
             
             subplot(3,4,12);            
@@ -2395,25 +2420,35 @@ classdef segmentation
             ylim([fe.yNodes(1) fe.yNodes(end)]) 
             %axis('equal');            
             set(gca,'YDir','normal');
-            set(gca,'fontsize',14); 
-            colormap(gca,gray);            
-            cbh = colorbar;
+            set(gca,'fontsize',14);
+            
+            nmCl = max(max(obj.clusters.Mag));
+            cmap = jet(nmCl);
+            t = 1:1:nmCl;
+            t1 = [];
+            for i = 1:nmCl                
+                t1{i} = num2str(t(i));
+            end
+            cmap(1,:) = [1 1 1];
+            cmap(2,:) = [0 0 1];
+            cmap(length(cmap),:) = [0 0 0];
+            colormap(gca, cmap);            
+            colorbar('Ticks', t,'TickLabels', t1);
+            cbh = colorbar;            
             set(gca, 'yticklabel','');
-            xlabel('Mag(\epsilon(r)) (m)');
-            xlabh = get(gca,'xLabel');
-            set(xlabh,'Position',get(xlabh,'Position') + [0 0.005 0]);
+            xlabel('(m)','Units', 'normalized','Position',[0.50,-0.09,0]); 
             set(gca,'YDir','normal');
             cbh.Position = cbh.Position - [0.000 0 0 0];
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);                      
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[1.00 0.75 1.71 1.30]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[1.03 0.51 1.65 1.30]) % stretch its width and height                        
             drawnow
             
             obj.saveFigure('tissueTypeImages_AutoMethod_all', gui.dataPath, gui.figFormat);
 
-        end % function imageMasks
+        end % function imageAutoTissueMaps
         %------------------------------------------------------------------
         function saveFigure(obj, fileName, dataPath, figFormat)
             % This is an helper function called by a figure display function
@@ -2484,71 +2519,43 @@ classdef segmentation
             %--------------------------------------------------------------                 
             scTr = 0.3; % transparency scale (0 - transparent, 1 - no transparency)
             figure;
-            set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.90, 0.70]);
+            set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.90, 0.60]);
             
             % Display permittivity maps
             % Forward model - 1, Re(epr) - 2, Im(epr) - 3, Mag(epr) - 4
             subplot(1,3,1);
-            imagesc(imrotate(real(fe.fwdMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes, 'AlphaData', scTr);hold on;
-            colormap(gca, gui.figColorMap);            
-            set(gca,'fontsize',14);            
+            imagesc(imrotate(ones(fe.n,fe.m) + obj.masks.tumorRe + obj.masks.tumorIm + obj.masks.tumorMag,90),'XData',fe.xNodes,'YData',-fe.yNodes);
+            cmap = obj.getTumorMaskColorMap();
+            colormap(gca, cmap);            
+            cbh = colorbar;
+            cbh.Ticks = [1, 2, 3, 4];                        
+            cbh.TickLabels = {'0','1','2','3'};
+            ylabel({'Number of intersecting masks';'(m)'},'Units', 'normalized','Position',[-0.05,0.50,0]);
+            %set(gca, 'yticklabel',''); 
+            title('Union of tumor masks','Units', 'normalized','Position',[0.5,1.02,0] );
+            xlabel('(m)','FontSize',14);
+            xlim([fe.xNodes(1) fe.xNodes(end)])
+            ylim([fe.yNodes(1) fe.yNodes(end)])            
+            grid on;
             set(gca,'YDir','normal');
-            bdRef = refModel.interfaces.glandular;
+            set(gca,'fontsize',14); 
+            sub_pos = get(gca,'position'); % get subplot axis position
+            set(gca,'position',sub_pos.*[0.450 1.7 1.73 0.80]) % stretch its width and height
+            hold on;
+            bdRef = refModel.interfaces.tumor;
             for i=1:length(bdRef)
                 Xref = [fe.xNodes(bdRef{i}.pts(:,2))' fe.yNodes(bdRef{i}.pts(:,1))']; 
                 if i == length(bdRef)
-                    pRef = plot(Xref(:,2), Xref(:,1), '-r','LineWidth',4);hold on
+                    pRec = plot(Xref(:,2), Xref(:,1), '-r','LineWidth',4);hold on
                 else
-                    plot(Xref(:,2), Xref(:,1), '-r','LineWidth',4);hold on
-                end
-            end
-            bdRec = obj.interfaces.glandularRe;
-            for i=1:length(bdRec)
-                Xrec = [fe.xNodes(bdRec{i}.pts(:,2))' fe.yNodes(bdRec{i}.pts(:,1))']; 
-                if i == length(bdRec)
-                    pRec = plot(Xrec(:,2), Xrec(:,1), '-b','LineWidth',4);hold on                    
-                else
-                    plot(Xrec(:,2), Xrec(:,1), '-b','LineWidth',4);hold on                    
+                    plot(Xref(:,2), Xref(:,1), '-r','LineWidth',4);hold on                    
                 end                    
             end
-            bdRec = obj.interfaces.glandularIm;
-            for i=1:length(bdRec)
-                Xrec = [fe.xNodes(bdRec{i}.pts(:,2))' fe.yNodes(bdRec{i}.pts(:,1))']; 
-                if i == length(bdRec)
-                    pRec = plot(Xrec(:,2), Xrec(:,1), '-g','LineWidth',4);hold on                    
-                else
-                    plot(Xrec(:,2), Xrec(:,1), '-g','LineWidth',4);hold on                    
-                end                    
-            end
-            bdRec = obj.interfaces.glandularMag;
-            for i=1:length(bdRec)
-                Xrec = [fe.xNodes(bdRec{i}.pts(:,2))' fe.yNodes(bdRec{i}.pts(:,1))']; 
-                if i == length(bdRec)
-                    pRec = plot(Xrec(:,2), Xrec(:,1), '-k','LineWidth',4);hold on                    
-                else
-                    plot(Xrec(:,2), Xrec(:,1), '-k','LineWidth',4);hold on                    
-                end                    
-            end
-            xlim([fe.xNodes(1) fe.xNodes(end)])
-            ylim([fe.yNodes(1) fe.yNodes(end)])
-            p=get(gca,'position'); % save position            
-            set(gca,'fontsize',14);            
-            xlabel('glandular interfaces (m)');            
-            ylabel('(m)');
-            ylabh = get(gca,'yLabel');
-            set(ylabh,'Position',get(ylabh,'Position') + [0.0150 0 0]);  
-            set(gca,'position',p); % restore position
-            sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.30 1.7 1.4 0.80]) % stretch its width and height                        
-            drawnow     
+            drawnow
             
             subplot(1,3,2);
             imagesc(imrotate(real(fe.fwdMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes, 'AlphaData', scTr);hold on;
-            colormap(gca, gui.figColorMap);            
-%             ht = text(-.053, 0.063,'Forward model','Color','red');
-%             ht = text(-.053, 0.059,'Reconstruction model(re)','Color', 'blue');
-%             ht = text(-.0045, 0.063,'Reconstruction model(Im)', 'Color', [0 0.5 0]);
-%             ht = text(-.0045, 0.059,'Reconstruction model(Mag)', 'Color', 'black');            
+            colormap(gca, gui.figColorMap);                      
             lh = legend('Box','off');
             lh.NumColumns = 2;
             lh.FontSize = 10;
@@ -2597,43 +2604,70 @@ classdef segmentation
             xlim([fe.xNodes(1) fe.xNodes(end)])
             ylim([fe.yNodes(1) fe.yNodes(end)])
             p=get(gca,'position'); % save position            
-            set(gca,'fontsize',14);            
-            xlabel('tumor interfaces (m)');            
+            set(gca,'fontsize',14);
+            title('Tumor interfaces','Units', 'normalized','Position',[0.5,1.02,0] );
+            xlabel('(m)');            
             set(gca, 'yticklabel',''); 
             set(gca,'position',p); % restore position
             legend({'Fwd','Im(\epsilon(r))', 'Re(\epsilon(r))', 'Mag(\epsilon(r))'});
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.85 1.7 1.4 0.80]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[0.97 1.7 1.35 0.80]) % stretch its width and height                        
             drawnow 
             
             subplot(1,3,3);
-            imagesc(imrotate(ones(fe.n,fe.m) + obj.masks.tumorRe + obj.masks.tumorIm + obj.masks.tumorMag,90),'XData',fe.xNodes,'YData',-fe.yNodes);
-            cmap = obj.getTumorMaskColorMap();
-            colormap(gca, cmap);            
-            cbh = colorbar;
-            cbh.Ticks = [1, 2, 3, 4];                        
-            cbh.TickLabels = {'0','1','2','3'};
-            set(gca, 'yticklabel',''); 
-            xlabel('Union of tumor masks (m)','FontSize',14);
-            xlim([fe.xNodes(1) fe.xNodes(end)])
-            ylim([fe.yNodes(1) fe.yNodes(end)])            
-            grid on;
+            imagesc(imrotate(real(fe.fwdMdl.complexPermittivity),90),'XData',fe.xNodes,'YData',-fe.yNodes, 'AlphaData', scTr);hold on;
+            colormap(gca, gui.figColorMap);            
+            set(gca,'fontsize',14);            
             set(gca,'YDir','normal');
-            set(gca,'fontsize',14); 
-            sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.95 1.7 1.78 0.80]) % stretch its width and height          
-            hold on;
-            bdRef = refModel.interfaces.tumor;
+            bdRef = refModel.interfaces.glandular;
             for i=1:length(bdRef)
                 Xref = [fe.xNodes(bdRef{i}.pts(:,2))' fe.yNodes(bdRef{i}.pts(:,1))']; 
                 if i == length(bdRef)
-                    pRec = plot(Xref(:,2), Xref(:,1), '-r','LineWidth',4);hold on
+                    pRef = plot(Xref(:,2), Xref(:,1), '-r','LineWidth',4);hold on
                 else
-                    plot(Xref(:,2), Xref(:,1), '-r','LineWidth',4);hold on                    
+                    plot(Xref(:,2), Xref(:,1), '-r','LineWidth',4);hold on
+                end
+            end
+            bdRec = obj.interfaces.glandularRe;
+            for i=1:length(bdRec)
+                Xrec = [fe.xNodes(bdRec{i}.pts(:,2))' fe.yNodes(bdRec{i}.pts(:,1))']; 
+                if i == length(bdRec)
+                    pRec = plot(Xrec(:,2), Xrec(:,1), '-b','LineWidth',4);hold on                    
+                else
+                    plot(Xrec(:,2), Xrec(:,1), '-b','LineWidth',4);hold on                    
                 end                    
             end
-            drawnow
-            
+            bdRec = obj.interfaces.glandularIm;
+            for i=1:length(bdRec)
+                Xrec = [fe.xNodes(bdRec{i}.pts(:,2))' fe.yNodes(bdRec{i}.pts(:,1))']; 
+                if i == length(bdRec)
+                    pRec = plot(Xrec(:,2), Xrec(:,1), '-g','LineWidth',4);hold on                    
+                else
+                    plot(Xrec(:,2), Xrec(:,1), '-g','LineWidth',4);hold on                    
+                end                    
+            end
+            bdRec = obj.interfaces.glandularMag;
+            for i=1:length(bdRec)
+                Xrec = [fe.xNodes(bdRec{i}.pts(:,2))' fe.yNodes(bdRec{i}.pts(:,1))']; 
+                if i == length(bdRec)
+                    pRec = plot(Xrec(:,2), Xrec(:,1), '-k','LineWidth',4);hold on                    
+                else
+                    plot(Xrec(:,2), Xrec(:,1), '-k','LineWidth',4);hold on                    
+                end                    
+            end
+            xlim([fe.xNodes(1) fe.xNodes(end)])
+            ylim([fe.yNodes(1) fe.yNodes(end)])
+            p=get(gca,'position'); % save position            
+            set(gca,'fontsize',14);
+            set(0, 'DefaultAxesTitleFontWeight','normal');
+            title('Glandular interfaces','Units', 'normalized','Position',[0.5,1.02,0] );
+            xlabel('(m)');            
+            set(gca, 'yticklabel',''); 
+            set(gca,'position',p); % restore position
+            sub_pos = get(gca,'position'); % get subplot axis position            
+            set(gca,'position',sub_pos.*[1.01 1.7 1.35 0.80]) % stretch its width and height
+            drawnow   
+                        
             switch gui.figFormat
                 case '-DoNotSave'
                     % Do not save files

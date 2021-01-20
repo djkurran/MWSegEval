@@ -1109,63 +1109,61 @@ classdef finiteElement
             %   gui.figFormat - string - Format to store figures (i.e., -fig, -png, -eps).
             %-------------------------------------------------------------- 
             figure;
-            set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.80, 0.80]);
+            set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.85, 0.85]);
+            annotation('rectangle',[0.12,0.95,0.85,0.05],'Edgecolor','k');
+            annotation('rectangle',[0.002,0.10,0.08,0.85],'Edgecolor','k');  
+            set(0, 'DefaultAxesTitleFontWeight','normal');
             
             % Display permittivity maps
             % Forward model: Re - 1, Im - 2, Mag - 3
             subplot(2,3,1);imagesc(imrotate(real(obj.fwdMdl.complexPermittivity),90),'XData',obj.xNodes,'YData',-obj.yNodes);
             colormap(gca, gui.figColorMap);
-            ch = colorbar;    
-%           set(gca, 'CLim');            
+            ch = colorbar;               
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');            
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
-            set(gca, 'xticklabel',''); 
-            ylabel('forward model (m)');
+            set(gca, 'xticklabel','');             
+            ylabel({'Forward model'; '(m)'});
+            set(0, 'DefaultAxesTitleFontWeight','normal');
+            title('Real', 'Units', 'normalized','Position',[0.5,1.125,0] );
             ylabh = get(gca,'yLabel');
-            set(ylabh,'Position',get(ylabh,'Position') + [0.020 0 0]); 
+            set(ylabh,'Position',get(ylabh,'Position') + [-0.010 0 0]); 
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.38 0.95 1.20 1.20]) % stretch its width and height                        
+            set(gca,'position',sub_pos.*[1.02 0.924 1.10 1.10]) % stretch its width and height                        
             drawnow     
             
             subplot(2,3,2);imagesc(imrotate(-imag(obj.fwdMdl.complexPermittivity),90),'XData',obj.xNodes,'YData',-obj.yNodes);
             colormap(gca, gui.figColorMap);
             ch = colorbar;    
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');
             set(gca, 'yticklabel','');
-            %ylabel('\epsilon maps (m)');
-            %ylabh = get(gca,'yLabel');
-            %set(ylabh,'Position',get(ylabh,'Position') + [0 .00 0.1]);
-            %set(ylabh,'Position',get(ylabh,'Position'));
+            set(0, 'DefaultAxesTitleFontWeight','normal');
+            title('Imaginary', 'Units', 'normalized','Position',[0.5,1.125,0] );            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.90 0.95 1.20 1.20]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[1.03 0.924 1.10 1.10]) % stretch its width and height                     
             drawnow
             
             subplot(2,3,3);imagesc(imrotate(abs(obj.fwdMdl.complexPermittivity),90),'XData',obj.xNodes,'YData',-obj.yNodes);
             colormap(gca, gui.figColorMap);
             ch = colorbar;    
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
             set(gca, 'xticklabel','');
             set(gca, 'yticklabel','');
-            %ylabel('\epsilon maps (m)');
-            %ylabh = get(gca,'yLabel');
-            %set(ylabh,'Position',get(ylabh,'Position') + [0 .00 0.1]);
-            %set(ylabh,'Position',get(ylabh,'Position'));
+            set(0, 'DefaultAxesTitleFontWeight','normal');
+            title('Magnitude', 'Units', 'normalized','Position',[0.5,1.125,0] );            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.99 0.95 1.20 1.20]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[1.03 0.924 1.10 1.10]) % stretch its width and height                     
             drawnow
             
             % Display permittivity maps
@@ -1173,48 +1171,45 @@ classdef finiteElement
             subplot(2,3,4);imagesc(imrotate(real(obj.invMdl.complexPermittivity),90),'XData',obj.xNodes,'YData',-obj.yNodes);
             colormap(gca, gui.figColorMap); 
             ch = colorbar;
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
-            set(gca,'fontsize',14);            
-            ylabel('Inverse model (m)');
+            set(gca,'fontsize',14);  
+            xlabel('(m)');
+            ylabel({'Inverse model'; '(m)'});            
             ylabh = get(gca,'yLabel');
-            set(ylabh,'Position',get(ylabh,'Position') + [0.020 0 0]); 
-            xlabel('Real (m)')
+            set(ylabh,'Position',get(ylabh,'Position') + [-0.010 0 0]);            
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.38 1.10 1.20 1.20]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[1.02 1.10 1.10 1.10]) % stretch its width and height                     
             drawnow            
             
             subplot(2,3,5);imagesc(imrotate(-imag(obj.invMdl.complexPermittivity),90),'XData',obj.xNodes,'YData',-obj.yNodes);
             colormap(gca, gui.figColorMap);
             ch = colorbar;    
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
-            set(gca, 'yticklabel','');
-            xlabel('Imaginary (m)');            
+            xlabel('(m)');
+            set(gca, 'yticklabel','');               
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.90 1.10 1.20 1.20]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[1.03 1.10 1.10 1.10]) % stretch its width and height                     
             drawnow
             
             subplot(2,3,6);imagesc(imrotate(abs(obj.invMdl.complexPermittivity),90),'XData',obj.xNodes,'YData',-obj.yNodes);
             colormap(gca, gui.figColorMap);
             ch = colorbar;    
-%           set(gca, 'CLim'); 
             set(gca,'fontsize',14);
             set(gca,'YDir','normal');
             p=get(gca,'position'); % save position            
             set(gca,'fontsize',14);
-            set(gca, 'yticklabel','');
-            xlabel('Magnitude (m)');            
+            xlabel('(m)');
+            set(gca, 'yticklabel','');                     
             set(gca,'position',p); % restore position
             sub_pos = get(gca,'position'); % get subplot axis position
-            set(gca,'position',sub_pos.*[0.99 1.10 1.20 1.20]) % stretch its width and height                     
+            set(gca,'position',sub_pos.*[1.03 1.10 1.10 1.10]) % stretch its width and height                     
             drawnow
             
             switch gui.figFormat
@@ -1226,7 +1221,7 @@ classdef finiteElement
                     export_fig([gui.dataPath 'figures/' 'complexPermittivityImages_all'], gui.figFormat);
             end
               
-        end % function imageMasks
+        end % function imageFwdAndInvModels
         %------------------------------------------------------------------        
         function [DomainData, varargout] = InputDataXML(obj, InputDataFilePath, InputDataFile)
             % InputDataXML
