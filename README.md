@@ -35,7 +35,7 @@ Apache License, 2.0
 
 ## Citing MWSegEval
 
-D. Kurrant, N. Abdollahi, M. Omer, P. Mojabi, E. Fear, J. LoVetri, “MWSegEval –An image analysis toolbox for microwave breast images”, SoftwareX, 2020 (submitted for review) 
+D. Kurrant, N. Abdollahi, M. Omer, P. Mojabi, E. Fear, J. LoVetri, “MWSegEval –An image analysis toolbox for microwave breast images”, SoftwareX, 2021 (submitted for review) 
 
 
 
